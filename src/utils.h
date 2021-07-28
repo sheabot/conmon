@@ -162,6 +162,15 @@ extern gboolean use_syslog;
 		} while (0); \
 	}
 
+#define shealogf(fmt, ...) \
+	if (log_level >= DEBUG_LEVEL) { \
+		do { \
+			fprintf(stderr, "[conmon:d]: " fmt "\n", ##__VA_ARGS__); \
+			if (use_syslog) \
+				syslog(LOG_INFO, "conmon %.20s <ndebug>: shea: %s(%d:%s)" fmt " \n", log_cid, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__); \
+		} while (0); \
+	}
+
 /* Set the log level for this call. log level defaults to warning.
    parse the string value of level_name to the appropriate log_level_t enum value
 */

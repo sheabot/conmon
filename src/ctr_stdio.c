@@ -66,12 +66,14 @@ gboolean stdio_cb(int fd, GIOCondition condition, gpointer user_data)
 		if (pipe == STDOUT_PIPE) {
 			mainfd_stdout = -1;
 			if (container_status >= 0 && mainfd_stderr < 0) {
+				shealogf("g_main_loop_quit: container_status=%d, mainfd_stderr=%d", container_status, mainfd_stderr);
 				g_main_loop_quit(main_loop);
 			}
 		}
 		if (pipe == STDERR_PIPE) {
 			mainfd_stderr = -1;
 			if (container_status >= 0 && mainfd_stdout < 0) {
+				shealogf("g_main_loop_quit: container_status=%d, mainfd_stdout=%d", container_status, mainfd_stdout);
 				g_main_loop_quit(main_loop);
 			}
 		}

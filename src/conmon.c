@@ -384,14 +384,14 @@ int main(int argc, char *argv[])
 	 * conmon to only send one value down this pipe, which will later be the exit code
 	 * Thus, if we are legacy and we are exec, skip this write.
 	 */
-	ndebugf("shea: opt_api_version=%d, opt_exec=%d, sync_pipe_fd=%d",
+	shealogf("opt_api_version=%d, opt_exec=%d, sync_pipe_fd=%d",
 		opt_api_version, opt_exec, sync_pipe_fd);
 	if ((opt_api_version >= 1 || !opt_exec) && sync_pipe_fd >= 0)
 		write_sync_fd(sync_pipe_fd, container_pid, NULL);
 
-	ndebugf("shea: calling setup_oom_handling: container_pid=%d", container_pid);
+	shealogf("calling setup_oom_handling: container_pid=%d", container_pid);
 	setup_oom_handling(container_pid);
-	ndebugf("shea: after setup_oom_handling: container_pid=%d", container_pid);
+	shealogf("after setup_oom_handling: container_pid=%d", container_pid);
 
 	if (mainfd_stdout >= 0) {
 		g_unix_fd_add(mainfd_stdout, G_IO_IN, stdio_cb, GINT_TO_POINTER(STDOUT_PIPE));
@@ -436,7 +436,7 @@ int main(int argc, char *argv[])
 		but are not terminal. In this case, we still want to run to process all of the output,
 		but will need to exit once all the i/o is read. This will be handled in stdio_cb above.
 	*/
-	ndebugf("shea: opt_api_version=%d, opt_exec=%d, opt_terminal=%d, container_status=%d",
+	shealogf("opt_api_version=%d, opt_exec=%d, opt_terminal=%d, container_status=%d",
 		opt_api_version, opt_exec, opt_terminal, container_status);
 	if (opt_api_version < 1 || !opt_exec || !opt_terminal || container_status < 0) {
 		g_idle_add(check_child_processes_cb, &data);
@@ -459,12 +459,12 @@ int main(int argc, char *argv[])
 	 * If timed_out is TRUE but container_pid is -1, the process must have died before
 	 * the timer elapsed. Ignore the timeout and treat it like a normal container exit.
 	 */
-	ndebugf("shea: timed_out=%d, container_pid=%d", timed_out, container_pid);
+	shealogf("timed_out=%d, container_pid=%d", timed_out, container_pid);
 	if (timed_out && container_pid > 0) {
 		pid_t process_group = getpgid(container_pid);
 		/* if process_group is 1, we will end up calling
 		 *  kill(-1), which kills everything conmon is allowed to. */
-		ndebugf("shea: process_group=%d", process_group);
+		shealogf("process_group=%d", process_group);
 		if (process_group > 1)
 			kill(-process_group, SIGKILL);
 		else
@@ -485,7 +485,7 @@ int main(int argc, char *argv[])
 	_cleanup_free_ char *status_str = g_strdup_printf("%d", exit_status);
 
 	/* Write the exit file to container persistent directory if it is specified */
-	ndebugf("shea: opt_persist_path=%s", opt_persist_path);
+	shealogf("opt_persist_path=%s", opt_persist_path);
 	if (opt_persist_path) {
 		_cleanup_free_ char *ctr_exit_file_path = g_build_filename(opt_persist_path, "exit", NULL);
 		if (!g_file_set_contents(ctr_exit_file_path, status_str, -1, &err))
@@ -496,7 +496,7 @@ int main(int argc, char *argv[])
 	 * Writing to this directory helps if a daemon process wants to monitor all container exits
 	 * using inotify.
 	 */
-	ndebugf("shea: opt_exit_dir=%s", opt_exit_dir);
+	shealogf("opt_exit_dir=%s", opt_exit_dir);
 	if (opt_exit_dir) {
 		_cleanup_free_ char *exit_file_path = g_build_filename(opt_exit_dir, opt_cid, NULL);
 		if (!g_file_set_contents(exit_file_path, status_str, -1, &err))
@@ -510,6 +510,6 @@ int main(int argc, char *argv[])
 	if (attach_symlink_dir_path != NULL && unlink(attach_symlink_dir_path) == -1 && errno != ENOENT)
 		pexit("Failed to remove symlink for attach socket directory");
 
-	ndebugf("shea: exit_status=%d", exit_status);
+	shealogf("exit_status=%d", exit_status);
 	return exit_status;
 }

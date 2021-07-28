@@ -48,6 +48,7 @@ static void check_child_processes(GHashTable *pid_to_handler, GHashTable *cache)
 			continue;
 
 		if (pid < 0 && errno == ECHILD) {
+			shealogf("g_main_loop_quit: pid=%d, errno=%d", pid, errno);
 			g_main_loop_quit(main_loop);
 			return;
 		}
@@ -55,9 +56,11 @@ static void check_child_processes(GHashTable *pid_to_handler, GHashTable *cache)
 			pexit("Failed to read child process status");
 
 		if (pid == 0)
+			shealogf("pid=%d", pid);
 			return;
 
 		/* If we got here, pid > 0, so we have a valid pid to check.  */
+		shealogf("pid=%d > 0", pid);
 		void (*cb)(GPid, int, gpointer) = g_hash_table_lookup(pid_to_handler, &pid);
 		if (cb) {
 			cb(pid, status, 0);
@@ -108,6 +111,7 @@ void runtime_exit_cb(G_GNUC_UNUSED GPid pid, int status, G_GNUC_UNUSED gpointer 
 {
 	runtime_status = status;
 	create_pid = -1;
+	shealogf("g_main_loop_quit: runtime_status=%d", runtime_status);
 	g_main_loop_quit(main_loop);
 }
 
@@ -128,6 +132,8 @@ void container_exit_cb(G_GNUC_UNUSED GPid pid, int status, G_GNUC_UNUSED gpointe
 		return;
 	}
 
+	shealogf("g_main_loop_quit: container_status=%d, opt_api_version=%d, create_pid=%d, opt_exec=%d. opt_terminal=%d",
+		container_status, opt_api_version, create_pid, opt_exec, opt_terminal);
 	g_main_loop_quit(main_loop);
 }
 
