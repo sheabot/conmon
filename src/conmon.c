@@ -443,6 +443,7 @@ int main(int argc, char *argv[])
 		g_idle_add(check_child_processes_cb, &data);
 		g_main_loop_run(main_loop);
 	}
+	shealogf("after g_main_loop_run");
 
 	check_cgroup2_oom();
 

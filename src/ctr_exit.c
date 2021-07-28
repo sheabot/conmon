@@ -18,11 +18,13 @@ volatile pid_t create_pid = -1;
 
 void on_sigchld(G_GNUC_UNUSED int signal)
 {
+	shealogf("raise SIGUSR1");
 	raise(SIGUSR1);
 }
 
 void on_sig_exit(int signal)
 {
+	shealogf("signal=%d, container_pid=%d, create_pid=%d", signal, container_pid, create_pid);
 	if (container_pid > 0) {
 		if (kill(container_pid, signal) == 0)
 			return;
@@ -36,6 +38,7 @@ void on_sig_exit(int signal)
 		}
 	}
 	/* Just force a check if we get here.  */
+	shealogf("raise SIGUSR1: signal=%d, container_pid=%d, create_pid=%d", signal, container_pid, create_pid);
 	raise(SIGUSR1);
 }
 
@@ -145,6 +148,7 @@ void do_exit_command()
 	 * atexit() runs functions in reverse, so we need to
 	 * manually call here. Repeated calls will not cause trouble
 	 */
+	sheaflog("here");
 	reap_children();
 
 	if (sync_pipe_fd > 0) {
