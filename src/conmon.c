@@ -104,10 +104,10 @@ int main(int argc, char *argv[])
 					_pexitf("Failed to write conmon pidfile: %s", err->message);
 				}
 			}
-			shealogf("_exit: opt_sync=%d, main_pid=%d, opt_conmon_pid_file=%s", opt_sync, main_pid, opt_conmon_pid_file);
+			shealogf("parent1 _exit: opt_sync=%d, main_pid=%d, opt_conmon_pid_file=%s", opt_sync, main_pid, opt_conmon_pid_file);
 			_exit(0);
 		}
-		shealogf("child pid=%d", getpid());
+		shealogf("child1 pid=%d", getpid());
 	}
 
 	/* before we fork, ensure our children will be reaped */
@@ -296,10 +296,13 @@ int main(int argc, char *argv[])
 
 		// We don't want runc to be unkillable so we reset the oom_score_adj back to 0
 		attempt_oom_adjust("0");
+		shealogf("parent2 calling execv: create_pid=%d", create_pid);
 		execv(g_ptr_array_index(runtime_argv, 0), (char **)runtime_argv->pdata);
-		shealogf("after execv");
+		shealogf("parent2 after execv");
 		exit(127);
 	}
+
+	shealogf("child2 create container: pid=%d", getpid());
 
 	if ((signal(SIGTERM, on_sig_exit) == SIG_ERR) || (signal(SIGQUIT, on_sig_exit) == SIG_ERR)
 	    || (signal(SIGINT, on_sig_exit) == SIG_ERR))
@@ -345,6 +348,7 @@ int main(int argc, char *argv[])
 		if (!opt_exec || !opt_terminal || container_status < 0) {
 			GHashTable *exit_status_cache = g_hash_table_new_full(g_int_hash, g_int_equal, g_free, g_free);
 			data.exit_status_cache = exit_status_cache;
+			shealogf("g_main_loop_run: opt_exec=%d, opt_terminal=%d, container_status=%d", opt_exec, opt_terminal, container_status);
 			g_idle_add(check_child_processes_cb, &data);
 			g_main_loop_run(main_loop);
 		}
@@ -354,6 +358,7 @@ int main(int argc, char *argv[])
 		do
 			ret = waitpid(create_pid, &runtime_status, 0);
 		while (ret < 0 && errno == EINTR);
+		shealog("waitpid: ret=%d, errno=%d", ret, errno);
 		if (ret < 0) {
 			if (create_pid > 0) {
 				int old_errno = errno;
@@ -433,8 +438,10 @@ int main(int argc, char *argv[])
 			pid_t *k = (pid_t *)key;
 			int *v = (int *)value;
 			void (*cb)(GPid, int, gpointer) = g_hash_table_lookup(pid_to_handler, k);
-			if (cb)
+			if (cb) {
+				shealogf("calling cb: k=%d, v=%d", *k, *v);
 				cb(*k, *v, 0);
+			}
 		}
 		g_hash_table_destroy(data.exit_status_cache);
 		data.exit_status_cache = NULL;

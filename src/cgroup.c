@@ -61,6 +61,7 @@ static char *process_cgroup_subsystem_path(int pid, bool cgroup2, const char *su
 	size_t len = 0;
 	char *ptr, *path;
 	while ((read = getline(&line, &len, fp)) != -1) {
+		/* line = 1:cpuset,cpu,cpuacct,blkio,memory,devices,freezer,net_cls,pids:/ */
 		_cleanup_strv_ char **subsystems = NULL;
 		ptr = strchr(line, ':');
 		if (ptr == NULL) {
@@ -80,18 +81,23 @@ static char *process_cgroup_subsystem_path(int pid, bool cgroup2, const char *su
 			subsystem_path[strlen(subsystem_path) - 1] = '\0';
 			return subsystem_path;
 		}
+		/* ptr  = cpuset,cpu,cpuacct,blkio,memory,devices,freezer,net_cls,pids */
+		/* path = / */
 		subsystems = g_strsplit(ptr, ",", -1);
 		for (int i = 0; subsystems[i] != NULL; i++) {
 			if (strcmp(subsystems[i], subsystem) == 0) {
+				/* subsystems[i] = "memory" */
 				char *subpath = strchr(subsystems[i], '=');
 				if (subpath == NULL) {
-					subpath = ptr;
+					/* subpath = ptr; */
+					subpath = subsystems[i];
 				} else {
 					*subpath = 0;
 				}
 
 				char *subsystem_path = g_strdup_printf("%s/%s%s", CGROUP_ROOT, subpath, path);
 				subsystem_path[strlen(subsystem_path) - 1] = '\0';
+				shealogf("subsystem_path=%s", subsystem_path);
 				return subsystem_path;
 			}
 		}
