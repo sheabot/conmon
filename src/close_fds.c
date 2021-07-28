@@ -52,8 +52,10 @@ static void __attribute__((constructor)) init()
 
 			new_size = (fd / FD_SETSIZE) + 1;
 			open_files_set = realloc(open_files_set, new_size * sizeof(fd_set));
-			if (open_files_set == NULL)
+			if (open_files_set == NULL) {
+				shealogf("_exit: open_files_set == NULL");
 				_exit(EXIT_FAILURE);
+			}
 
 			for (i = size; i < new_size; i++)
 				FD_ZERO(&(open_files_set[i]));

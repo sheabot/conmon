@@ -87,6 +87,7 @@ int main(int argc, char *argv[])
 					_pexitf("Failed to write conmon pidfile: %s", err->message);
 				}
 			}
+			shealogf("_exit: opt_sync=%d, main_pid=%d, opt_conmon_pid_file=%s", opt_sync, main_pid, opt_conmon_pid_file);
 			_exit(0);
 		}
 	}
