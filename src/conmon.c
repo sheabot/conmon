@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
 				getpid(), opt_sync, main_pid, opt_conmon_pid_file);
 			_exit(0);
 		}
-		shealogf("child1: pid=%d", getpid());
+		shealogf("child1: pid=%d, main_pid=%d", getpid(), main_pid);
 	}
 
 	/* before we fork, ensure our children will be reaped */
@@ -141,7 +141,8 @@ int main(int argc, char *argv[])
 		pexit("Failed to dup over stderr");
 
 	/* Create a new session group */
-	setsid();
+	pid_t sid = setsid();
+	shealogf("child1: sid=%d", sid);
 
 	/*
 	 * Set self as subreaper so we can wait for container process
@@ -297,13 +298,13 @@ int main(int argc, char *argv[])
 
 		// We don't want runc to be unkillable so we reset the oom_score_adj back to 0
 		attempt_oom_adjust("0");
-		shealogf("child2: calling execv: pid=%d", getpid());
+		shealogf("child2: calling execv: pid=%d, create_pid=%d", getpid(), create_pid);
 		execv(g_ptr_array_index(runtime_argv, 0), (char **)runtime_argv->pdata);
 		shealogf("child2: after execv");
 		exit(127);
 	}
 
-	shealogf("parent2: create container: create_pid=%d", create_pid);
+	shealogf("parent2: create container: pid=%d, create_pid=%d", getpid(), create_pid);
 
 	if ((signal(SIGTERM, on_sig_exit) == SIG_ERR) || (signal(SIGQUIT, on_sig_exit) == SIG_ERR)
 	    || (signal(SIGINT, on_sig_exit) == SIG_ERR))
@@ -360,7 +361,8 @@ int main(int argc, char *argv[])
 			ret = waitpid(create_pid, &runtime_status, 0);
 		while (ret < 0 && errno == EINTR);
 		int err = errno;
-		shealogf("parent2: waitpid runc: create_pid=%d, ret=%d, err=%d (%s)", create_pid, ret, err, strerror(err));
+		shealogf("parent2: waitpid runc: create_pid=%d, runtime_status=%d, ret=%d, err=%d (%s)",
+			create_pid, runtime_status, ret, err, strerror(err));
 		if (ret < 0) {
 			if (create_pid > 0) {
 				int old_errno = errno;

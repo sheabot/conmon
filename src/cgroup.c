@@ -99,7 +99,8 @@ static char *process_cgroup_subsystem_path(int pid, bool cgroup2, const char *su
 					*subpath = 0;
 				}
 
-				char *subsystem_path = g_strdup_printf("%s/%s%s", CGROUP_ROOT, subpath, path);
+				//char *subsystem_path = g_strdup_printf("%s/%s%s", CGROUP_ROOT, subpath, path);
+				char *subsystem_path = g_strdup_printf("%s%s", CGROUP_ROOT, path);
 				subsystem_path[strlen(subsystem_path) - 1] = '\0';
 				shealogf("subsystem_path=%s", subsystem_path);
 				return subsystem_path;
