@@ -215,5 +215,6 @@ void reap_children()
 
 void handle_signal(G_GNUC_UNUSED const int signum)
 {
+	shealogf("here");
 	exit(EXIT_FAILURE);
 }

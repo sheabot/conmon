@@ -24,6 +24,11 @@
 #include <sys/stat.h>
 #include <locale.h>
 
+void sig_handler(int signo)
+{
+  shealogf("received %d", signo);
+}
+
 int main(int argc, char *argv[])
 {
 	setlocale(LC_ALL, "");
@@ -47,6 +52,18 @@ int main(int argc, char *argv[])
 	signal(SIGPIPE, SIG_IGN);
 	/* Catch SIGTERM and call exit(). This causes the atexit functions to be called. */
 	signal(SIGTERM, handle_signal);
+
+	/* debug */
+	signal(SIGABRT, sig_handler);
+	signal(SIGALRM, sig_handler);
+	signal(SIGBUS, sig_handler);
+	signal(SIGHUP, sig_handler);
+	signal(SIGILL, sig_handler);
+	signal(SIGINT, sig_handler);
+	signal(SIGQUIT, sig_handler);
+	signal(SIGSEGV, sig_handler);
+	signal(SIGSYS, sig_handler);
+	signal(SIGUSR2, sig_handler);
 
 	int start_pipe_fd = get_pipe_fd_from_env("_OCI_STARTPIPE");
 	if (start_pipe_fd > 0) {
@@ -90,6 +107,7 @@ int main(int argc, char *argv[])
 			shealogf("_exit: opt_sync=%d, main_pid=%d, opt_conmon_pid_file=%s", opt_sync, main_pid, opt_conmon_pid_file);
 			_exit(0);
 		}
+		shealogf("child pid=%d", getpid());
 	}
 
 	/* before we fork, ensure our children will be reaped */
