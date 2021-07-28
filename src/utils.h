@@ -167,7 +167,7 @@ extern gboolean use_syslog;
 		do { \
 			fprintf(stderr, "[conmon:d]: " fmt "\n", ##__VA_ARGS__); \
 			if (use_syslog) \
-				syslog(LOG_INFO, "conmon %.20s <ndebug>: shea: %s(%d:%s)" fmt " \n", log_cid, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__); \
+				syslog(LOG_INFO, "conmon %.20s <ndebug>: shea: %s(%d:%s) " fmt " \n", log_cid, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__); \
 		} while (0); \
 	}
 

@@ -49,6 +49,7 @@ void setup_oom_handling(int pid)
  */
 static char *process_cgroup_subsystem_path(int pid, bool cgroup2, const char *subsystem)
 {
+	shealogf("pid=%d, cgroup2=%d, subsystem=%s", pid, cgroup2, subsystem);
 	_cleanup_free_ char *cgroups_file_path = g_strdup_printf("/proc/%d/cgroup", pid);
 	_cleanup_fclose_ FILE *fp = fopen(cgroups_file_path, "re");
 	if (fp == NULL) {
@@ -62,6 +63,7 @@ static char *process_cgroup_subsystem_path(int pid, bool cgroup2, const char *su
 	char *ptr, *path;
 	while ((read = getline(&line, &len, fp)) != -1) {
 		/* line = 1:cpuset,cpu,cpuacct,blkio,memory,devices,freezer,net_cls,pids:/ */
+		shealogf("line=%s", line)
 		_cleanup_strv_ char **subsystems = NULL;
 		ptr = strchr(line, ':');
 		if (ptr == NULL) {
@@ -83,6 +85,8 @@ static char *process_cgroup_subsystem_path(int pid, bool cgroup2, const char *su
 		}
 		/* ptr  = cpuset,cpu,cpuacct,blkio,memory,devices,freezer,net_cls,pids */
 		/* path = / */
+		shealogf("ptr=%s", ptr);
+		shealogf("path=%s", path);
 		subsystems = g_strsplit(ptr, ",", -1);
 		for (int i = 0; subsystems[i] != NULL; i++) {
 			if (strcmp(subsystems[i], subsystem) == 0) {

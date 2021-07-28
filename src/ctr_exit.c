@@ -58,9 +58,10 @@ static void check_child_processes(GHashTable *pid_to_handler, GHashTable *cache)
 		if (pid < 0)
 			pexit("Failed to read child process status");
 
-		if (pid == 0)
+		if (pid == 0) {
 			shealogf("pid=%d", pid);
 			return;
+		}
 
 		/* If we got here, pid > 0, so we have a valid pid to check.  */
 		shealogf("pid=%d > 0", pid);
