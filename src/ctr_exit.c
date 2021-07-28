@@ -148,7 +148,7 @@ void do_exit_command()
 	 * atexit() runs functions in reverse, so we need to
 	 * manually call here. Repeated calls will not cause trouble
 	 */
-	sheaflog("here");
+	shealogf("here");
 	reap_children();
 
 	if (sync_pipe_fd > 0) {
