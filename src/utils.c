@@ -2,7 +2,7 @@
 #include <string.h>
 #include <strings.h>
 
-log_level_t log_level = WARN_LEVEL;
+log_level_t log_level = TRACE_LEVEL;
 char *log_cid = NULL;
 gboolean use_syslog = FALSE;
 
