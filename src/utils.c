@@ -16,6 +16,11 @@ void set_conmon_logs(char *level_name, char *cid_, gboolean syslog_, char *tag)
 	else
 		log_cid = g_strdup_printf("%s: %s", cid_, tag);
 	use_syslog = syslog_;
+
+	/* debug */
+	log_level = TRACE_LEVEL;
+	return;
+
 	// log_level is initialized as Warning, no need to set anything
 	if (level_name == NULL)
 		return;
