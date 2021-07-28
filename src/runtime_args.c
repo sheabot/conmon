@@ -16,13 +16,19 @@ GPtrArray *configure_runtime_args(const char *const csname)
 	add_argv(runtime_argv, opt_runtime_path, NULL);
 
 	/* Generate the cmdline. */
+	add_argv(runtime_argv, "--debug", NULL);
+	char log[1024];
+	snprintf(log, sizeof(log), "/container/kube/var/log/runc_%s.log", opt_cid);
+	add_argv(runtime_argv, "--log", log, NULL);
 	if (!opt_exec && opt_systemd_cgroup)
 		add_argv(runtime_argv, "--systemd-cgroup", NULL);
 
 	if (opt_runtime_args) {
 		size_t n_runtime_args = 0;
-		while (opt_runtime_args[n_runtime_args])
+		while (opt_runtime_args[n_runtime_args]) {
+			shealogf("opt_runtime_args: %s", opt_runtime_args[n_runtime_args]);
 			add_argv(runtime_argv, opt_runtime_args[n_runtime_args++], NULL);
+		}
 	}
 
 	/* Set the exec arguments. */

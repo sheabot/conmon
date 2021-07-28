@@ -278,6 +278,7 @@ int main(int argc, char *argv[])
 		// We don't want runc to be unkillable so we reset the oom_score_adj back to 0
 		attempt_oom_adjust("0");
 		execv(g_ptr_array_index(runtime_argv, 0), (char **)runtime_argv->pdata);
+		shealogf("after execv");
 		exit(127);
 	}
 
