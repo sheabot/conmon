@@ -358,7 +358,7 @@ int main(int argc, char *argv[])
 		do
 			ret = waitpid(create_pid, &runtime_status, 0);
 		while (ret < 0 && errno == EINTR);
-		shealog("waitpid: ret=%d, errno=%d", ret, errno);
+		shealogf("waitpid: ret=%d, errno=%d", ret, errno);
 		if (ret < 0) {
 			if (create_pid > 0) {
 				int old_errno = errno;
