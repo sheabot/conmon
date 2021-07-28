@@ -49,11 +49,14 @@ int main(int argc, char *argv[])
 	attempt_oom_adjust("-1000");
 
 	/* ignoring SIGPIPE prevents conmon from being spuriously killed */
-	signal(SIGPIPE, SIG_IGN);
+	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
+		shealogf("Failed to set SIGPIPE=SIG_IGN");
 	/* Catch SIGTERM and call exit(). This causes the atexit functions to be called. */
-	signal(SIGTERM, handle_signal);
+	if (signal(SIGTERM, handle_signal) == SIG_ERR)
+		shealogf("Failed to set SIGTERM=handle_signal");
 
 	/* debug */
+	shealogf("started: pid=%d", getpid());
 	signal(SIGABRT, sig_handler);
 	signal(SIGALRM, sig_handler);
 	signal(SIGBUS, sig_handler);
@@ -304,7 +307,7 @@ int main(int argc, char *argv[])
 		exit(127);
 	}
 
-	shealogf("parent2: create container: pid=%d, create_pid=%d", getpid(), create_pid);
+	shealogf("child1: create container: pid=%d, create_pid=%d", getpid(), create_pid);
 
 	if ((signal(SIGTERM, on_sig_exit) == SIG_ERR) || (signal(SIGQUIT, on_sig_exit) == SIG_ERR)
 	    || (signal(SIGINT, on_sig_exit) == SIG_ERR))
@@ -361,7 +364,7 @@ int main(int argc, char *argv[])
 			ret = waitpid(create_pid, &runtime_status, 0);
 		while (ret < 0 && errno == EINTR);
 		int err = errno;
-		shealogf("parent2: waitpid runc: create_pid=%d, runtime_status=%d, ret=%d, err=%d (%s)",
+		shealogf("child1: waitpid runc: create_pid=%d, runtime_status=%d, ret=%d, err=%d (%s)",
 			create_pid, runtime_status, ret, err, strerror(err));
 		if (ret < 0) {
 			if (create_pid > 0) {
@@ -413,14 +416,14 @@ int main(int argc, char *argv[])
 	 * conmon to only send one value down this pipe, which will later be the exit code
 	 * Thus, if we are legacy and we are exec, skip this write.
 	 */
-	shealogf("parent2: opt_api_version=%d, opt_exec=%d, sync_pipe_fd=%d",
+	shealogf("child1: opt_api_version=%d, opt_exec=%d, sync_pipe_fd=%d",
 		opt_api_version, opt_exec, sync_pipe_fd);
 	if ((opt_api_version >= 1 || !opt_exec) && sync_pipe_fd >= 0)
 		write_sync_fd(sync_pipe_fd, container_pid, NULL);
 
-	shealogf("parent2: calling setup_oom_handling: container_pid=%d", container_pid);
+	shealogf("child1: calling setup_oom_handling: container_pid=%d", container_pid);
 	setup_oom_handling(container_pid);
-	shealogf("parent2: after setup_oom_handling: container_pid=%d", container_pid);
+	shealogf("child1: after setup_oom_handling: container_pid=%d", container_pid);
 
 	if (mainfd_stdout >= 0) {
 		g_unix_fd_add(mainfd_stdout, G_IO_IN, stdio_cb, GINT_TO_POINTER(STDOUT_PIPE));
@@ -467,7 +470,7 @@ int main(int argc, char *argv[])
 		but are not terminal. In this case, we still want to run to process all of the output,
 		but will need to exit once all the i/o is read. This will be handled in stdio_cb above.
 	*/
-	shealogf("parent2: opt_api_version=%d, opt_exec=%d, opt_terminal=%d, container_status=%d",
+	shealogf("child1: opt_api_version=%d, opt_exec=%d, opt_terminal=%d, container_status=%d",
 		opt_api_version, opt_exec, opt_terminal, container_status);
 	if (opt_api_version < 1 || !opt_exec || !opt_terminal || container_status < 0) {
 		g_idle_add(check_child_processes_cb, &data);

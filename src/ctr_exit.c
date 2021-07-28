@@ -59,7 +59,7 @@ static void check_child_processes(GHashTable *pid_to_handler, GHashTable *cache)
 			pexit("Failed to read child process status");
 
 		if (pid == 0) {
-			shealogf("pid=%d", pid);
+			shealogf("pid=%d, status=%d", pid, status);
 			return;
 		}
 
@@ -83,7 +83,7 @@ static void check_child_processes(GHashTable *pid_to_handler, GHashTable *cache)
 gboolean check_child_processes_cb(gpointer user_data)
 {
 	struct pid_check_data *data = (struct pid_check_data *)user_data;
-	shealogf("check_child_processes");
+	shealogf("check_child_processes: pid=%d", getpid());
 	check_child_processes(data->pid_to_handler, data->exit_status_cache);
 	return G_SOURCE_REMOVE;
 }
@@ -91,7 +91,7 @@ gboolean check_child_processes_cb(gpointer user_data)
 gboolean on_sigusr1_cb(gpointer user_data)
 {
 	struct pid_check_data *data = (struct pid_check_data *)user_data;
-	shealogf("check_child_processes");
+	shealogf("check_child_processes: pid=%d", getpid());
 	check_child_processes(data->pid_to_handler, data->exit_status_cache);
 	return G_SOURCE_CONTINUE;
 }
@@ -100,6 +100,7 @@ gboolean timeout_cb(G_GNUC_UNUSED gpointer user_data)
 {
 	timed_out = TRUE;
 	ninfo("Timed out, killing main loop");
+	shealogf("Timed out, killing main loop");
 	g_main_loop_quit(main_loop);
 	return G_SOURCE_REMOVE;
 }
