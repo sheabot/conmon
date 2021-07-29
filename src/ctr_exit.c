@@ -45,7 +45,7 @@ void on_sig_exit(int signal)
 static void check_child_processes(GHashTable *pid_to_handler, GHashTable *cache)
 {
 	for (;;) {
-		int status;
+		int status = 0;
 		pid_t pid = waitpid(-1, &status, WNOHANG);
 		if (pid < 0 && errno == EINTR)
 			continue;

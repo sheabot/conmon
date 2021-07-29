@@ -472,6 +472,11 @@ int main(int argc, char *argv[])
 	*/
 	shealogf("child1: opt_api_version=%d, opt_exec=%d, opt_terminal=%d, container_status=%d",
 		opt_api_version, opt_exec, opt_terminal, container_status);
+	int i;
+	for (i = 0; i < 30; i++) {
+		shealogf("child1: sleeping %d", i);
+		sleep(1);
+	}
 	if (opt_api_version < 1 || !opt_exec || !opt_terminal || container_status < 0) {
 		g_idle_add(check_child_processes_cb, &data);
 		g_main_loop_run(main_loop);
