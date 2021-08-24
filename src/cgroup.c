@@ -8,6 +8,7 @@
 
 #include <fcntl.h>
 #include <glib.h>
+#include <mntent.h>
 #include <stdio.h>
 #include <linux/limits.h>
 #include <sys/eventfd.h>
@@ -24,6 +25,7 @@
 int oom_event_fd = -1;
 int oom_cgroup_fd = -1;
 
+static char *get_cgroup_mount_point(const char *subsystem);
 static char *process_cgroup_subsystem_path(int pid, bool cgroup2, const char *subsystem);
 static void setup_oom_handling_cgroup_v2(int pid);
 static void setup_oom_handling_cgroup_v1(int pid);
@@ -44,6 +46,58 @@ void setup_oom_handling(int pid)
 }
 
 /*
+ * Return the mount point for a specific cgroup subsystem. Handle both
+ * hierarchical and non-hierarchical cgroupfs.
+ * Return NULL on error or if mount point not found.
+ *
+ * Ex: Non-hierarchical cgroupfs mount:
+ *  cgroup /sys/fs/cgroup cgroup rw,nosuid,nodev,noexec,relatime,cpuset,cpu,cpuacct,blkio,memory,devices,freezer,net_cls,pids,clone_children 0 0
+ *
+ * Ex: Hierarchical cgroupfs mounts:
+ *  cgroup /sys/fs/cgroup/memory cgroup rw,nosuid,nodev,noexec,relatime,memory 0 0
+ *  cgroup /sys/fs/cgroup/cpu cgroup rw,nosuid,nodev,noexec,relatime,cpu 0 0
+ *  ...
+ */
+static char *get_cgroup_mount_point(const char *subsystem) {
+    struct mntent *ent;
+    FILE *fp;
+    char *mount_point = NULL;
+
+    /* Open kernel mounts */
+    fp = setmntent("/proc/mounts", "r");
+    if (fp == NULL) {
+        nwarn("Failed to open /proc/mounts for reading");
+        return NULL;
+    }
+
+    /* Parse each mount point */
+    while (NULL != (ent = getmntent(fp))) {
+        /* Ignore non-cgroup mounts */
+        if (strcmp(ent->mnt_type, "cgroup") != 0) {
+            continue;
+        }
+
+        /* Found a cgroup mount. Parse mount options for cgroup subsystem. */
+        char **subsystems = NULL;
+        subsystems = g_strsplit(ent->mnt_opts, ",", -1);
+        for (int i = 0; subsystems[i] != NULL; i++) {
+            if (strcmp(subsystems[i], subsystem) == 0) {
+                 /* Found matching cgroup subsystem. Return mount point. */
+                mount_point = g_strdup(ent->mnt_dir);
+                break;
+            }
+        }
+
+        if (mount_point != NULL) {
+            break;
+        }
+    }
+    endmntent(fp);
+
+    return mount_point;
+}
+
+/*
  * Returns the path for specified controller name for a pid.
  * Returns NULL on error.
  */
@@ -54,6 +108,15 @@ static char *process_cgroup_subsystem_path(int pid, bool cgroup2, const char *su
 	if (fp == NULL) {
 		nwarnf("Failed to open cgroups file: %s", cgroups_file_path);
 		return NULL;
+	}
+
+	_cleanup_free_ char *cgroup_mount_point = NULL;
+	if (!cgroup2) {
+		/* Get cgroup subsystem mount point for cgroup v1 */
+		cgroup_mount_point = get_cgroup_mount_point(subsystem);
+		if (cgroup_mount_point == NULL) {
+			nwarnf("Failed to get cgroup mount point for %s subsystem", subsystem);
+		}
 	}
 
 	_cleanup_free_ char *line = NULL;
@@ -90,7 +153,13 @@ static char *process_cgroup_subsystem_path(int pid, bool cgroup2, const char *su
 					*subpath = 0;
 				}
 
-				char *subsystem_path = g_strdup_printf("%s/%s%s", CGROUP_ROOT, subpath, path);
+				char *subsystem_path;
+				if (cgroup_mount_point == NULL) {
+					subsystem_path = g_strdup_printf("%s/%s%s", CGROUP_ROOT, subpath, path);
+				}
+				else {
+					subsystem_path = g_strdup_printf("%s%s", cgroup_mount_point, path);
+				}
 				subsystem_path[strlen(subsystem_path) - 1] = '\0';
 				return subsystem_path;
 			}
